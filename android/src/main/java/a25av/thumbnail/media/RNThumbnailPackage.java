@@ -1,5 +1,5 @@
 
-package me.hauvo.thumbnail;
+package a25av.thumbnail.media;
 
 import java.util.Arrays;
 import java.util.Collections;

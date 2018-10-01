@@ -1,5 +1,5 @@
 
-package me.hauvo.thumbnail;
+package a25av.thumbnail.media;
 
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -12,7 +12,15 @@ import android.os.Environment;
 import android.util.Log;
 import android.media.MediaMetadataRetriever;
 
+import android.Manifest;
+import android.support.v4.content.ContextCompat;
+import android.content.pm.PackageManager;
+import android.content.Context;
+
+import android.net.Uri;
+
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.io.File;
@@ -62,27 +70,71 @@ public class RNThumbnailModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void get(String filePath, Promise promise) {
   	try {
-	    filePath = filePath.replace("file://","");
+		if (ContextCompat.checkSelfPermission(this.reactContext, Manifest.permission.READ_EXTERNAL_STORAGE)
+        != PackageManager.PERMISSION_GRANTED) {
+			Log.e("RNThumbnail", "permission to READ_EXTERNAL_STORAGE not granted");
+		} else {
+			Log.d("RNThumbnail", "permission to READ_EXTERNAL_STORAGE granted");
+		}
+
+		if (ContextCompat.checkSelfPermission(this.reactContext, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        != PackageManager.PERMISSION_GRANTED) {
+			Log.e("RNThumbnail", "permission to WRITE_EXTERNAL_STORAGE not granted");
+		} else {
+			Log.d("RNThumbnail", "permission to WRITE_EXTERNAL_STORAGE granted");
+		}
+
+		File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+		Log.d("RNThumbnail", storageDir.toString());
+
+		Uri fileUri = Uri.parse(filePath);
+
+		File videoFile = new File(fileUri.getPath());
+
+		// File.exists() can throw exceptions if there's a security problem
+		try {
+			Boolean fileExists = videoFile.exists();
+		} catch (Exception e) {
+			Log.e("RNThumbnail", "file exists exception" + e);
+		}
+
+		// if file does not exist log the error
+		if(fileExists || videoFile.canRead()) {
+			Log.e("RNThumbnail", videoFile + " file does not exist");
+		}
+
+		// filePath = filePath.replace("content://","");
+
 	    String fullPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/thumb";
 	    String fileName = "thumb-" + getMD5(filePath) + ".jpeg";
 
-	    File cache = new File(fullPath, fileName);
+		File cache = new File(fullPath, fileName);
+
 	    if (cache.exists()) {
 	      WritableMap map = Arguments.createMap();
-	      map.putString("path", "file://" + fullPath + '/' + fileName);
-	      promise.resolve(map);
+		  map.putString("path", "content://" + fullPath + '/' + fileName);
+		  promise.resolve(map);
 	      return;
 	    }
 
-	    MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-	    if (filePath.startsWith("http")) {
-			retriever.setDataSource(filePath, new HashMap<String, String>());
-		} else {
-			retriever.setDataSource(filePath);
+		MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+
+		try {
+			if (filePath.startsWith("http")) {
+				retriever.setDataSource(filePath, new HashMap<String, String>());
+			} else {
+				Log.d("RNThumbnail", filePath);
+				retriever.setDataSource(filePath);
+				Log.d("RNThumbnail", retriever.toString());
+			}
+		} catch (Exception e) {
+			Log.d("RNThumbnail", "MediaMetadataRetriever exception " + e);
 		}
-	    Bitmap image = retriever.getFrameAtTime(1000000, MediaMetadataRetriever.OPTION_CLOSEST);
+
+	    Bitmap image = retriever.getFrameAtTime(1000, MediaMetadataRetriever.OPTION_CLOSEST);
 
 		File dir = new File(fullPath);
+
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
@@ -103,15 +155,17 @@ public class RNThumbnailModule extends ReactContextBaseJavaModule {
 
 		WritableMap map = Arguments.createMap();
 
-		map.putString("path", "file://" + fullPath + '/' + fileName);
+		map.putString("path", "content://" + fullPath + '/' + fileName);
 		map.putDouble("width", image.getWidth());
 		map.putDouble("height", image.getHeight());
+
+		Log.d("RNThumbnail", map.toString());
 
 		promise.resolve(map);
 
 		} catch (Exception e) {
-			//Log.e("E_RNThumnail_ERROR", e.getMessage());
-			promise.reject("E_RNThumnail_ERROR", e);
+			Log.d("RNThumbnail", "exception " + e, e);
+			promise.reject("E_RNThumnail_ERROR", "Exception " + e);
 		}
     }
 }
