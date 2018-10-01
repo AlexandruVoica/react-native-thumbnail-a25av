@@ -1,6 +1,6 @@
 
 # react-native-thumbnail
-Get thumbnail from local media. Currently, it only supports for video.
+Get thumbnail from local media. Currently, it only supports video files and it ignores images.
 
 ## Getting started
 
@@ -10,8 +10,9 @@ Get thumbnail from local media. Currently, it only supports for video.
 
 `$ react-native link react-native-thumbnail`
 
-### Manual installation
+After the linking process is complete, continue by checking the files mentioned in the *Manual installation* section, because `react-native link` has a tendency of not working perfectly and it might change files or duplicate some lines which are going to cause your build to fail.
 
+### Manual installation
 
 #### iOS
 
