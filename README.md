@@ -1,5 +1,5 @@
 
-# react-native-thumbnail
+# react-native-thumbnail-a25av
 Get thumbnail from local media.
 
 **I updated it only for Android.** If anyone wants to contribute for the iOS part, I will gladly review/accept PRs.
