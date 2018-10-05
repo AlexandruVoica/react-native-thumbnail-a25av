@@ -70,98 +70,90 @@ public class RNThumbnailModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void get(String filePath, Promise promise) {
   	try {
-		if (ContextCompat.checkSelfPermission(this.reactContext, Manifest.permission.READ_EXTERNAL_STORAGE)
-        != PackageManager.PERMISSION_GRANTED) {
-			Log.e("RNThumbnail", "permission to READ_EXTERNAL_STORAGE not granted");
-		} else {
-			Log.d("RNThumbnail", "permission to READ_EXTERNAL_STORAGE granted");
-		}
+      if (ContextCompat.checkSelfPermission(this.reactContext, Manifest.permission.READ_EXTERNAL_STORAGE)
+          != PackageManager.PERMISSION_GRANTED) {
+        Log.e("RNThumbnail", "permission to READ_EXTERNAL_STORAGE not granted");
+      } else {
+        Log.d("RNThumbnail", "permission to READ_EXTERNAL_STORAGE granted");
+      }
 
-		if (ContextCompat.checkSelfPermission(this.reactContext, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        != PackageManager.PERMISSION_GRANTED) {
-			Log.e("RNThumbnail", "permission to WRITE_EXTERNAL_STORAGE not granted");
-		} else {
-			Log.d("RNThumbnail", "permission to WRITE_EXTERNAL_STORAGE granted");
-		}
+      if (ContextCompat.checkSelfPermission(this.reactContext, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+          != PackageManager.PERMISSION_GRANTED) {
+        Log.e("RNThumbnail", "permission to WRITE_EXTERNAL_STORAGE not granted");
+      } else {
+        Log.d("RNThumbnail", "permission to WRITE_EXTERNAL_STORAGE granted");
+      }
 
-		File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-		Log.d("RNThumbnail", storageDir.toString());
+      Context context = getReactApplicationContext();
 
-		Uri fileUri = Uri.parse(filePath);
+      Uri fileUri = Uri.parse(filePath);
 
-		File videoFile = new File(fileUri.getPath());
+      String fullPath = Environment.getExternalStorageDirectory() + "/thumb";
+      Log.d("RNThumbnail", fullPath);
+      String fileName = "thumb-" + getMD5(filePath) + ".jpeg";
 
-		// File.exists() can throw exceptions if there's a security problem
-		try {
-			Boolean fileExists = videoFile.exists();
-		} catch (Exception e) {
-			Log.e("RNThumbnail", "file exists exception" + e);
-		}
+      File cache = new File(fullPath, fileName);
 
-		// if file does not exist log the error
-		if(fileExists || videoFile.canRead()) {
-			Log.e("RNThumbnail", videoFile + " file does not exist");
-		}
+      if (cache.exists()) {
+        Integer cacheSize = Integer.parseInt(String.valueOf(cache.length()));
+        Log.d("RNThumbnail", cache + " exists");
+        Log.d("RNThumbnail", cache + " size " + cacheSize);
 
-		// filePath = filePath.replace("content://","");
+        if (cacheSize == 0) {
+          Boolean fileDeleted = cache.delete();
+          if (fileDeleted) {
+            Log.d("RNThumbnail", "file deleted");
+          } else {
+            Log.d("RNThumbnail", "file was NOT deleted");
+          }
+        } else {
+          WritableMap map = Arguments.createMap();
+          map.putString("path", (Uri.fromFile(cache)).toString());
+          promise.resolve(map);
+          return;
+        }
+      }
 
-	    String fullPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/thumb";
-	    String fileName = "thumb-" + getMD5(filePath) + ".jpeg";
+      MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 
-		File cache = new File(fullPath, fileName);
+      try {
+        if (filePath.startsWith("http")) {
+          retriever.setDataSource(filePath, new HashMap<String, String>());
+        } else {
+          retriever.setDataSource(context, fileUri);
+        }
+      } catch (Exception e) {
+        Log.d("RNThumbnail", "MediaMetadataRetriever exception");
+      }
 
-	    if (cache.exists()) {
-	      WritableMap map = Arguments.createMap();
-		  map.putString("path", "content://" + fullPath + '/' + fileName);
-		  promise.resolve(map);
-	      return;
-	    }
+      Bitmap image = retriever.getFrameAtTime(100000, MediaMetadataRetriever.OPTION_CLOSEST);
 
-		MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+      File dir = new File(fullPath);
 
-		try {
-			if (filePath.startsWith("http")) {
-				retriever.setDataSource(filePath, new HashMap<String, String>());
-			} else {
-				Log.d("RNThumbnail", filePath);
-				retriever.setDataSource(filePath);
-				Log.d("RNThumbnail", retriever.toString());
-			}
-		} catch (Exception e) {
-			Log.d("RNThumbnail", "MediaMetadataRetriever exception " + e);
-		}
+      if (!dir.exists()) {
+        dir.mkdirs();
+      }
 
-	    Bitmap image = retriever.getFrameAtTime(1000, MediaMetadataRetriever.OPTION_CLOSEST);
+      OutputStream fOut = null;
+      // String fileName = "thumb-" + UUID.randomUUID().toString() + ".jpeg";
 
-		File dir = new File(fullPath);
+      File file = new File(fullPath, fileName);
+      file.createNewFile();
+      fOut = new FileOutputStream(file);
 
-		if (!dir.exists()) {
-			dir.mkdirs();
-		}
+      // 100 means no compression, the lower you go, the stronger the compression
+      image.compress(Bitmap.CompressFormat.JPEG, 60, fOut);
+      fOut.flush();
+      fOut.close();
 
-		OutputStream fOut = null;
-		// String fileName = "thumb-" + UUID.randomUUID().toString() + ".jpeg";
+      WritableMap map = Arguments.createMap();
 
-		File file = new File(fullPath, fileName);
-		file.createNewFile();
-		fOut = new FileOutputStream(file);
+      map.putString("path", (Uri.fromFile(file)).toString());
+      map.putDouble("width", image.getWidth());
+      map.putDouble("height", image.getHeight());
+      map.putInt("size", Integer.parseInt(String.valueOf(file.length())));
 
-		// 100 means no compression, the lower you go, the stronger the compression
-		image.compress(Bitmap.CompressFormat.JPEG, 60, fOut);
-		fOut.flush();
-		fOut.close();
-
-		// MediaStore.Images.Media.insertImage(reactContext.getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName());
-
-		WritableMap map = Arguments.createMap();
-
-		map.putString("path", "content://" + fullPath + '/' + fileName);
-		map.putDouble("width", image.getWidth());
-		map.putDouble("height", image.getHeight());
-
-		Log.d("RNThumbnail", map.toString());
-
-		promise.resolve(map);
+      promise.resolve(map);
 
 		} catch (Exception e) {
 			Log.d("RNThumbnail", "exception " + e, e);
