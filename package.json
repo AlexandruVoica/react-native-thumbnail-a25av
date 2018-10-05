@@ -1,6 +1,6 @@
 {
   "name": "react-native-thumbnail-a25av",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -11,9 +11,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/phuochau/react-native-thumbnail.git"
+    "url": "git+https://github.com/AlexandruVoica/react-native-thumbnail-a25av"
   },
-  "author": "Hau Vo <hau.vophuoc@gmail.com>",
+  "author": "Alexandru Voica <alexandru.voica16@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
     "react-native": "^0.47.0"

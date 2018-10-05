@@ -1,6 +1,12 @@
 
 # react-native-thumbnail
-Get thumbnail from local media. Currently, it only supports video files and it ignores images.
+Get thumbnail from local media.
+
+**I updated it only for Android.** If anyone wants to contribute for the iOS part, I will gladly review/accept PRs.
+
+**Tt only supports video files from camera roll and it ignores images.**
+
+This is the most updated version of react-native-thumbnail.
 
 ## Getting started
 
@@ -37,6 +43,8 @@ After the linking process is complete, continue by checking the files mentioned 
   	```
 
 ## Usage
+Filepath should be a "content://" schema Uri.
+
 ```javascript
 import RNThumbnail from 'react-native-thumbnail';
 
